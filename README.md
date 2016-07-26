@@ -24,13 +24,51 @@ Once you've loaded the plug-in you should have this command available.
 
 To report the closest vertex on a given object use the following command.
 
-> closestVertex -face 0 -position \<float x\> \<float y\> \<float z\> \<string object\>
+`closestVertex -face 0 -position <float x> <float y> <float z> <string object>`
 
 To report the closest face on a given object change the value of the __face__ flag to 1.
 
-> closestVertex -face 1 -position \<float x\> \<float y\> \<float z\> \<string object\>
+`closestVertex -face 1 -position <float x> <float y> <float z> <string object>`
 
 If you do not include the __face__ flag the command will work in vertex mode.
+
+Here are some examples in MEL and Python which with two objects selected will give the closest vertex or face on the second object to the first objects.
+
+~~~~
+//vertex mode
+{
+    string $sel[] = `ls -sl -l`;
+    float $pos[] = `xform -q -ws -t $sel[0]`;
+    
+    int $ind = `closestVertex -p $pos[0] $pos[1] $pos[2] $sel[1]`;
+    select -r ($sel[1] +".vtx[" +$ind +"]");
+}
+
+//face mode
+{
+    string $sel[] = `ls -sl -l`;
+    float $pos[] = `xform -q -ws -t $sel[0]`;
+    
+    int $ind = `closestVertex -f 1 -p $pos[0] $pos[1] $pos[2] $sel[1]`;
+    select -r ($sel[1] +".f[" +$ind +"]");
+}
+~~~~
+
+~~~
+#vertex mode
+sel = cmds.ls(sl = True, l = True)
+pos = cmds.xform(sel[0], q = True, ws = True, t = True)
+    
+ind = cmds.closestVertex(sel[1], f = False, p = pos)
+cmds.select(sel[1] +'.vtx[' +str(ind) +']', r = True)
+
+#face mode
+sel = cmds.ls(sl = True, l = True)
+pos = cmds.xform(sel[0], q = True, ws = True, t = True)
+    
+ind = cmds.closestVertex(sel[1], f = True, p = pos)
+cmds.select(sel[1] +'.f[' +str(ind) +']', r = True)
+~~~
 
 
 
