@@ -12,7 +12,7 @@ At the moment the installation is really simple. Simply copy
 
 to one of your Maya plugin folders. These are usually something like the paths below
 
-> C:\Users\\\<User\>\Documents\maya\\\<Maya Version\>\prefs
+> C:\Users\\\<User\>\Documents\maya\\\<Maya Version\>\plug-ins
 
 > C:\Program Files\Autodesk\\\<Maya Version\>\bin\plug-ins
 
