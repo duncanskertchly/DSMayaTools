@@ -32,7 +32,7 @@ To report the closest face on a given object change the value of the __face__ fl
 
 If you do not include the __face__ flag the command will work in vertex mode.
 
-Here are some examples in MEL and Python which with two objects selected will give the closest vertex or face on the second object to the first objects.
+Here are some examples in MEL and Python. With two objects selected (the second has to be a polygon object) this will give the closest vertex or face on the second object to the first.
 
 ~~~~
 //vertex mode
