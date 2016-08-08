@@ -1,4 +1,4 @@
-set(SOURCE_FILES "closestVertex.h" "closestVertex.cpp" "pluginMain.cpp" ) 
+set(SOURCE_FILES "normalAlign.h" "normalAlign.cpp" "closestVertex.h" "closestVertex.cpp" "pluginMain.cpp" ) 
 
 find_package(Maya REQUIRED)
 
@@ -10,3 +10,6 @@ target_link_libraries(${PROJECT_NAME} ${MAYA_LIBRARIES})
 
 MAYA_PLUGIN(${PROJECT_NAME})
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION plug-ins)
+
+INSTALL_FILES(/scripts ".mel")
+INSTALL_FILES(/scripts ".py")
