@@ -9,6 +9,7 @@ global proc int DSMayaTools()
         string $pluginPath = ($paths[$i] + "/DSMayaTools.mll");
         if (`filetest -r $pluginPath`)
         {
+        	python("from DSMayaTools import *");
             loadPlugin($pluginPath);
             return 1;
         }
