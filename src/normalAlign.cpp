@@ -186,27 +186,27 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
         MEulerRotation::RotationOrder eulerOrder;
         switch(rotOrder) 
         {
-            case 0:
+            case ROT_ORDER_XYZ:
                 order = MTransformationMatrix::kXYZ;
                 eulerOrder = MEulerRotation::kXYZ;
                 break;
-            case 1:
+            case ROT_ORDER_YZX:
                 order = MTransformationMatrix::kYZX;
                 eulerOrder = MEulerRotation::kYZX;
                 break;
-            case 2:
+            case ROT_ORDER_ZXY:
                 order = MTransformationMatrix::kZXY;
                 eulerOrder = MEulerRotation::kZXY;
                 break;
-            case 3:
+            case ROT_ORDER_XZY:
                 order = MTransformationMatrix::kXZY;
                 eulerOrder = MEulerRotation::kZXY;
                 break;
-            case 4:
+            case ROT_ORDER_YXZ:
                 order = MTransformationMatrix::kYXZ;
                 eulerOrder = MEulerRotation::kYXZ;
                 break;
-            case 5:
+            case ROT_ORDER_ZYX:
                 order = MTransformationMatrix::kZYX;
                 eulerOrder = MEulerRotation::kZYX;
                 break;
