@@ -33,12 +33,14 @@
 #include <maya/MFloatVector.h>
 #include <maya/MDagPath.h>
 #include <maya/MItMeshVertex.h>
+#include <maya/MEulerRotation.h>
 
 using namespace std;
 
 // #define _DEBUG
 
 #define RADTODEG 57.2958
+#define DEGTORAD 0.0174533
 
 #define ROT_ORDER_XYZ 0
 #define ROT_ORDER_YZX 1
@@ -62,11 +64,19 @@ MObject NormalAlign::targetRotateOrder;
 MObject NormalAlign::flipTargetUpAxis;
 MObject NormalAlign::flipTargetAimAxis;
 
-// MObject NormalAlign::uvValue;
-
 MObject NormalAlign::sourceWorldMatrix;
 
 MObject NormalAlign::targetParentInverseMatrix;
+
+MObject NormalAlign::offsetT;
+MObject NormalAlign::offsetTX;
+MObject NormalAlign::offsetTY;
+MObject NormalAlign::offsetTZ;
+
+MObject NormalAlign::offsetR;
+MObject NormalAlign::offsetRX;
+MObject NormalAlign::offsetRY;
+MObject NormalAlign::offsetRZ;
 
 MObject NormalAlign::outputT;
 MObject NormalAlign::outputTX;
@@ -80,7 +90,7 @@ MObject NormalAlign::outputRZ;
 
 MTypeId NormalAlign::id(209401);
 
-//gets the center of a poly by averaging the its component vertices
+//gets the center of a poly by averaging its component vertices
 MPoint getPolyCenter(MFnMesh &mesh, unsigned int index)
 {
     MIntArray polyVerts;
@@ -141,7 +151,8 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
         MDataHandle flipAimAxisHandle = data.inputValue(flipTargetAimAxis, &stat);
         MDataHandle flipUpAxisHandle = data.inputValue(flipTargetUpAxis, &stat);
         MDataHandle vertexModeHandle = data.inputValue(vertexMode, &stat);
-        // MDataHandle uvValueHandle = data.inputValue(uvValue, &stat);
+        MDataHandle offsetTransHandle = data.inputValue(offsetT, &stat);
+        MDataHandle offsetRotHandle = data.inputValue(offsetR, &stat);
 
         //get the various values from the data handles
         MMatrix targetParentInverseMatrix = targetParentInverseHandle.asMatrix();
@@ -149,8 +160,6 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
         
         bool flipAimAxis = flipAimAxisHandle.asBool();
         bool flipUpAxis = flipUpAxisHandle.asBool();
-
-        // float2 &uvValue = uvValueHandle.asFloat2();
 
         short aimAxis = aimAxisHandle.asShort();
         short upAxis = upAxisHandle.asShort();
@@ -162,11 +171,49 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
         MObject meshObject = meshDataHandle.asMesh();
         MFnMesh mesh(meshObject, &stat);
 
+        double3& translationOffset = offsetTransHandle.asDouble3();
+        double3& tempRotationOffset = offsetRotHandle.asDouble3();
+
         //stuff we're going to use to store the poly normal etc
         MVector normalVec;
         MVector upVec;
         MVector forwardVec;
         MPoint position;
+
+        //get the correct rotation order from the users selection for use when we get the rotation
+        //values from the matrix
+        MTransformationMatrix::RotationOrder order;
+        MEulerRotation::RotationOrder eulerOrder;
+        switch(rotOrder) 
+        {
+            case 0:
+                order = MTransformationMatrix::kXYZ;
+                eulerOrder = MEulerRotation::kXYZ;
+                break;
+            case 1:
+                order = MTransformationMatrix::kYZX;
+                eulerOrder = MEulerRotation::kYZX;
+                break;
+            case 2:
+                order = MTransformationMatrix::kZXY;
+                eulerOrder = MEulerRotation::kZXY;
+                break;
+            case 3:
+                order = MTransformationMatrix::kXZY;
+                eulerOrder = MEulerRotation::kZXY;
+                break;
+            case 4:
+                order = MTransformationMatrix::kYXZ;
+                eulerOrder = MEulerRotation::kYXZ;
+                break;
+            case 5:
+                order = MTransformationMatrix::kZYX;
+                eulerOrder = MEulerRotation::kZYX;
+                break;
+            default:
+                order = MTransformationMatrix::kXYZ;
+                eulerOrder = MEulerRotation::kXYZ;
+        }
 
         if (!vertexMode)
         {
@@ -182,15 +229,6 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
             //get the polys position in space
             position = getPolyCenter(mesh, ind);
 
-            
-            // //test thing
-            // mesh.getPointAtUV(ind, position, uvValue, MSpace::kObject);
-            // #ifdef _DEBUG
-            //     cout << "uValue: " << *uvValue << " vValue: " << *(uvValue + 1) << endl;
-            //     cout << "position: " << position << endl;
-            // #endif
-            
-
             //get the polys tangent vector
             upVec = getPolyTangent(mesh, ind);
         }
@@ -202,7 +240,7 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
             if (ind >= numVerts){ ind = numVerts - 1;}
             if (ind < 0){ ind = 0; }
 
-            //create a mesh iterator and set it's index to the users index value
+            //create a mesh iterator and set its index to the users index value
             MItMeshVertex meshVertIter(meshObject);
             int notNeeded;
             meshVertIter.setIndex(ind, notNeeded);
@@ -215,9 +253,9 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
             mesh.getVertexNormal(ind, normalVec, MSpace::kWorld);
             mesh.getPoint(ind, position, MSpace::kWorld);
 
+            //get the tangent using the first item in the list of faces found earlier
             if (connectedFaces.length() > 0)
             {
-                //get the tangent using the first item in the list of faces found earlier
                 mesh.getFaceVertexTangent(connectedFaces[0], ind, upVec, MSpace::kWorld);
             }
         }
@@ -262,50 +300,52 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
 
             temp4x4[3 - (aimAxis + upAxis)][0] = forwardVec.x;
             temp4x4[3 - (aimAxis + upAxis)][1] = forwardVec.y;
-            temp4x4[3 - (aimAxis + upAxis)][2] = forwardVec.z;
+            temp4x4[3 - (aimAxis + upAxis)][2] = forwardVec.z;            
         }
 
-        //put together the final matrix
-        //matrix we computed * world matrix of input meshes transform  * parent inverse matrix of target
-        MMatrix tempMatrix(temp4x4);
-        MMatrix finalMatrix = tempMatrix * sourceWorldMatrix * targetParentInverseMatrix;
+        //obtain an offset for the rotation
+        MEulerRotation rotationOffset(tempRotationOffset[0], tempRotationOffset[1], tempRotationOffset[2], eulerOrder);
+
+        //starting matrix that got computed from the face / vertex and its normals etc
+        MMatrix faceMatrix(temp4x4);
+
+        //put together the offset translation matrix
+        double offset4x4[4][4] = {  0.0,                    0.0,                    0.0,                    0.0,
+                                    0.0,                    0.0,                    0.0,                    0.0,
+                                    0.0,                    0.0,                    0.0,                    0.0,
+                                    translationOffset[0],   translationOffset[1],   translationOffset[2],   1.0};
+        //blank the last row to make it a rotation only matrix
+        MMatrix rotationOnlyMatrix = faceMatrix;
+        //set the translation values to default to make it a rotation only matrix 
+        rotationOnlyMatrix[3][0] = 0.0;
+        rotationOnlyMatrix[3][1] = 0.0;
+        rotationOnlyMatrix[3][2] = 0.0;
+        rotationOnlyMatrix[3][3] = 0.0;
+
+        //rotate the translation offset matrix by the rotation matrix so the
+        //offset ends up in the same space as the normal
+        MMatrix tempOffsetMatrix(offset4x4);
+        MMatrix offsetMatrix = tempOffsetMatrix * rotationOnlyMatrix;
+
+        //compute the final matrix
+        MMatrix finalMatrix = (faceMatrix - offsetMatrix) * sourceWorldMatrix * targetParentInverseMatrix;
+        // MMatrix finalMatrix = faceMatrix * sourceWorldMatrix * targetParentInverseMatrix;
         MTransformationMatrix finalTransform(finalMatrix);
-
-        //get the correct rotation order from the users selection for use when we get the rotation
-        //values from the matrix
-        MTransformationMatrix::RotationOrder order;
-        switch(rotOrder) 
-        {
-            case 0:
-                order = MTransformationMatrix::kXYZ;
-                break;
-            case 1:
-                order = MTransformationMatrix::kYZX;
-                break;
-            case 2:
-                order = MTransformationMatrix::kZXY;
-                break;
-            case 3:
-                order = MTransformationMatrix::kXZY;
-                break;
-            case 4:
-                order = MTransformationMatrix::kYXZ;
-                break;
-            case 5:
-                order = MTransformationMatrix::kZYX;
-                break;
-            default:
-                order = MTransformationMatrix::kXYZ;
-        }
 
         //store the final translation and rotation
         double finalRotation[3];
         MVector finalTranslation = finalTransform.getTranslation(MSpace::kWorld);
         finalTransform.getRotation(finalRotation, order);
 
+        //add the rotation offsets
+        finalRotation[0] += rotationOffset.x;
+        finalRotation[1] += rotationOffset.y;
+        finalRotation[2] += rotationOffset.z;
+
         #ifdef _DEBUG
             cout << "finalTranslation: " << finalTranslation.x << " " << finalTranslation.y << " " << finalTranslation.z << endl;
             cout << "finalRotation: " << finalRotation[0] * RADTODEG << " " << finalRotation[1] * RADTODEG << " " << finalRotation[2] * RADTODEG << endl;
+            cout << "translationOffset: " << translationOffset[0] << " " << translationOffset[1] << " " << translationOffset[2] << endl;
         #endif
 
         //get the output handles and set the final values
@@ -352,13 +392,6 @@ MStatus NormalAlign::initialize()
     vertexMode = numAttr.create("vertexMode", "vm", MFnNumericData::kBoolean);
     numAttr.setKeyable(false);
     addAttribute(vertexMode);
-
-    // uvValue = numAttr.create("uvValue", "uv", MFnNumericData::k2Float);
-    // numAttr.setKeyable(false);
-    // numAttr.setMin(0.0);
-    // numAttr.setMax(1.0);
-    // numAttr.setDefault(0.5);
-    // addAttribute(uvValue);
 
     targetAimAxis = enumAttr.create("targetAimAxis", "taim", 0, &stat);
     enumAttr.addField("X", 0);
@@ -411,6 +444,34 @@ MStatus NormalAlign::initialize()
     enumAttr.setReadable(false);
     enumAttr.setConnectable(true);
     addAttribute(targetRotateOrder);
+
+    offsetT = compAttr.create("offsetT", "offt");
+    compAttr.setKeyable(false);
+    offsetTX = unitAttr.create("offsetTX", "offtx", MFnUnitAttribute::kDistance);
+    unitAttr.setKeyable(false);
+    offsetTY = unitAttr.create("offsetTY", "offty", MFnUnitAttribute::kDistance);
+    unitAttr.setKeyable(false);
+    offsetTZ = unitAttr.create("offsetTZ", "offtz", MFnUnitAttribute::kDistance);
+    unitAttr.setKeyable(false);
+
+    compAttr.addChild(offsetTX);
+    compAttr.addChild(offsetTY);
+    compAttr.addChild(offsetTZ);
+    addAttribute(offsetT);
+
+    offsetR = compAttr.create("offsetR", "offr");
+    compAttr.setKeyable(false);
+    offsetRX = unitAttr.create("offsetRX", "offrx", MFnUnitAttribute::kAngle);
+    unitAttr.setKeyable(false);
+    offsetRY = unitAttr.create("offsetRY", "offry", MFnUnitAttribute::kAngle);
+    unitAttr.setKeyable(false);
+    offsetRZ = unitAttr.create("offsetRZ", "offrz", MFnUnitAttribute::kAngle);
+    unitAttr.setKeyable(false);
+
+    compAttr.addChild(offsetRX);
+    compAttr.addChild(offsetRY);
+    compAttr.addChild(offsetRZ);
+    addAttribute(offsetR);
 
     outputT = compAttr.create("outputT", "ot");
     compAttr.setWritable(false);
@@ -475,14 +536,7 @@ MStatus NormalAlign::initialize()
     attributeAffects(targetRotateOrder, outputTZ);
     attributeAffects(targetRotateOrder, outputRX);
     attributeAffects(targetRotateOrder, outputRY);
-    attributeAffects(targetRotateOrder, outputRZ);    
-
-    // attributeAffects(uvValue, outputTX);
-    // attributeAffects(uvValue, outputTY);
-    // attributeAffects(uvValue, outputTZ);
-    // attributeAffects(uvValue, outputRX);
-    // attributeAffects(uvValue, outputRY);
-    // attributeAffects(uvValue, outputRZ);    
+    attributeAffects(targetRotateOrder, outputRZ);      
 
     attributeAffects(targetAimAxis, outputTX);
     attributeAffects(targetAimAxis, outputTY);
@@ -518,6 +572,20 @@ MStatus NormalAlign::initialize()
     attributeAffects(targetUpAxis, outputRX);
     attributeAffects(targetUpAxis, outputRY);
     attributeAffects(targetUpAxis, outputRZ);    
+
+    attributeAffects(offsetTX, outputTX);
+    attributeAffects(offsetTY, outputTY);
+    attributeAffects(offsetTZ, outputTZ);
+    attributeAffects(offsetTX, outputRX);
+    attributeAffects(offsetTY, outputRY);
+    attributeAffects(offsetTZ, outputRZ);
+
+    attributeAffects(offsetRX, outputTX);
+    attributeAffects(offsetRY, outputTY);
+    attributeAffects(offsetRZ, outputTZ);
+    attributeAffects(offsetRX, outputRX);
+    attributeAffects(offsetRY, outputRY);
+    attributeAffects(offsetRZ, outputRZ);
 
     attributeAffects(flipTargetUpAxis, outputTX);
     attributeAffects(flipTargetUpAxis, outputTY);

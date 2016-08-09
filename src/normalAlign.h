@@ -30,7 +30,15 @@ public:
     static MObject targetUpAxis;
     static MObject targetRotateOrder;
 
-    // static MObject uvValue;
+    static MObject offsetT;
+    static MObject offsetTX;
+    static MObject offsetTY;
+    static MObject offsetTZ;
+
+    static MObject offsetR;
+    static MObject offsetRX;
+    static MObject offsetRY;
+    static MObject offsetRZ;
     
     static MObject outputT;
     static MObject outputTX;

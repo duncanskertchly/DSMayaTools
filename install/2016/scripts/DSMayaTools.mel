@@ -40,6 +40,14 @@ global proc AENormalAlignTemplate(string $nodeName)
 		
 		editorTemplate -endLayout;
 
+		editorTemplate -beginLayout "Offset Parameters" -collapse false;
+
+			editorTemplate -addControl -l "Translation Offset" "offsetT";
+
+			editorTemplate -addControl -l "Rotation Offset" "offsetR";
+
+		editorTemplate -endLayout;
+
     editorTemplate -addExtraControls;
     editorTemplate -endScrollLayout;
 
