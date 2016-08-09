@@ -328,7 +328,7 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
         MMatrix offsetMatrix = tempOffsetMatrix * rotationOnlyMatrix;
 
         //compute the final matrix
-        MMatrix finalMatrix = (faceMatrix - offsetMatrix) * sourceWorldMatrix * targetParentInverseMatrix;
+        MMatrix finalMatrix = (faceMatrix + offsetMatrix) * sourceWorldMatrix * targetParentInverseMatrix;
         MTransformationMatrix finalTransform(finalMatrix);
 
         //store the final translation and rotation
