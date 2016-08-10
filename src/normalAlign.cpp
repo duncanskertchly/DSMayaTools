@@ -261,8 +261,8 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
         }
 
         //flip the aim / up axis if required
-        if (flipAimAxis){ normalVec = normalVec * -1.0; }
-        if (flipUpAxis){ upVec = upVec * -1.0; }
+        if (flipAimAxis){ normalVec *= -1.0; }
+        if (flipUpAxis){ upVec *= -1.0; }
 
         #ifdef _DEBUG
             cout << "normalVec: " << normalVec << endl;
