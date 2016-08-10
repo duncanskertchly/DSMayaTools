@@ -281,7 +281,7 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
         forwardVec.normalize();
 
         //the default matrix, aim = x, upVec = y, z = forwardVec
-        double temp4x4[4][4] =  {    normalVec.x,        normalVec.y,        normalVec.z,          0.0,
+        double poly4x4[4][4] =  {    normalVec.x,        normalVec.y,        normalVec.z,          0.0,
                                      upVec.x,            upVec.y,            upVec.z,              0.0,
                                      forwardVec.x,       forwardVec.y,       forwardVec.z,         0.0,
                                      position.x,         position.y,         position.z,           1.0 
@@ -290,33 +290,33 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
         //customize the matrix if the user has chosen special aim / up axes
         if (aimAxis != upAxis)
         {
-            temp4x4[aimAxis][0] = normalVec.x;
-            temp4x4[aimAxis][1] = normalVec.y;
-            temp4x4[aimAxis][2] = normalVec.z;
+            poly4x4[aimAxis][0] = normalVec.x;
+            poly4x4[aimAxis][1] = normalVec.y;
+            poly4x4[aimAxis][2] = normalVec.z;
 
-            temp4x4[upAxis][0] = upVec.x;
-            temp4x4[upAxis][1] = upVec.y;
-            temp4x4[upAxis][2] = upVec.z;
+            poly4x4[upAxis][0] = upVec.x;
+            poly4x4[upAxis][1] = upVec.y;
+            poly4x4[upAxis][2] = upVec.z;
 
-            temp4x4[3 - (aimAxis + upAxis)][0] = forwardVec.x;
-            temp4x4[3 - (aimAxis + upAxis)][1] = forwardVec.y;
-            temp4x4[3 - (aimAxis + upAxis)][2] = forwardVec.z;            
+            poly4x4[3 - (aimAxis + upAxis)][0] = forwardVec.x;
+            poly4x4[3 - (aimAxis + upAxis)][1] = forwardVec.y;
+            poly4x4[3 - (aimAxis + upAxis)][2] = forwardVec.z;            
         }
 
         //obtain an offset for the rotation
         MEulerRotation rotationOffset(tempRotationOffset[0], tempRotationOffset[1], tempRotationOffset[2], eulerOrder);
 
         //starting matrix that got computed from the face / vertex and its normals etc
-        MMatrix faceMatrix(temp4x4);
+        MMatrix polyMatrix(poly4x4);
 
         //put together the offset translation matrix
         double offset4x4[4][4] = {  0.0,                    0.0,                    0.0,                    0.0,
                                     0.0,                    0.0,                    0.0,                    0.0,
                                     0.0,                    0.0,                    0.0,                    0.0,
                                     translationOffset[0],   translationOffset[1],   translationOffset[2],   1.0};
-        //blank the last row to make it a rotation only matrix
-        MMatrix rotationOnlyMatrix = faceMatrix;
-        //set the translation values to default to make it a rotation only matrix 
+
+        //create a rotation only version of the face matrix 
+        MMatrix rotationOnlyMatrix = polyMatrix;
         rotationOnlyMatrix[3][0] = 0.0;
         rotationOnlyMatrix[3][1] = 0.0;
         rotationOnlyMatrix[3][2] = 0.0;
@@ -328,7 +328,7 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
         MMatrix offsetMatrix = tempOffsetMatrix * rotationOnlyMatrix;
 
         //compute the final matrix
-        MMatrix finalMatrix = (faceMatrix + offsetMatrix) * sourceWorldMatrix * targetParentInverseMatrix;
+        MMatrix finalMatrix = (polyMatrix + offsetMatrix) * sourceWorldMatrix * targetParentInverseMatrix;
         MTransformationMatrix finalTransform(finalMatrix);
 
         //store the final translation and rotation
