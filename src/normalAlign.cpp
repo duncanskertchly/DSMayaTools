@@ -310,10 +310,11 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
         MMatrix polyMatrix(poly4x4);
 
         //put together the offset translation matrix
-        double offset4x4[4][4] = {  0.0,                    0.0,                    0.0,                    0.0,
-                                    0.0,                    0.0,                    0.0,                    0.0,
-                                    0.0,                    0.0,                    0.0,                    0.0,
-                                    translationOffset[0],   translationOffset[1],   translationOffset[2],   1.0};
+        double offset4x4[4][4] =    {   0.0,                    0.0,                    0.0,                    0.0,
+                                        0.0,                    0.0,                    0.0,                    0.0,
+                                        0.0,                    0.0,                    0.0,                    0.0,
+                                        translationOffset[0],   translationOffset[1],   translationOffset[2],   1.0
+                                    };
 
         //create a rotation only version of the face matrix 
         MMatrix rotationOnlyMatrix = polyMatrix;
