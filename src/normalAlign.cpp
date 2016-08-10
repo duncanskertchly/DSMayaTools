@@ -281,11 +281,10 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
         forwardVec.normalize();
 
         //the default matrix, aim = x, upVec = y, z = forwardVec
-        double poly4x4[4][4] =  {    normalVec.x,        normalVec.y,        normalVec.z,          0.0,
-                                     upVec.x,            upVec.y,            upVec.z,              0.0,
-                                     forwardVec.x,       forwardVec.y,       forwardVec.z,         0.0,
-                                     position.x,         position.y,         position.z,           1.0 
-                                };
+        double poly4x4[4][4] =  {   normalVec.x,        normalVec.y,        normalVec.z,          0.0,
+                                    upVec.x,            upVec.y,            upVec.z,              0.0,
+                                    forwardVec.x,       forwardVec.y,       forwardVec.z,         0.0,
+                                    position.x,         position.y,         position.z,           1.0  };
     
         //customize the matrix if the user has chosen special aim / up axes
         if (aimAxis != upAxis)
@@ -313,8 +312,7 @@ MStatus NormalAlign::compute(const MPlug& plug, MDataBlock& data)
         double offset4x4[4][4] =    {   0.0,                    0.0,                    0.0,                    0.0,
                                         0.0,                    0.0,                    0.0,                    0.0,
                                         0.0,                    0.0,                    0.0,                    0.0,
-                                        translationOffset[0],   translationOffset[1],   translationOffset[2],   1.0
-                                    };
+                                        translationOffset[0],   translationOffset[1],   translationOffset[2],   1.0  };
 
         //create a rotation only version of the face matrix 
         MMatrix rotationOnlyMatrix = polyMatrix;
