@@ -1,6 +1,6 @@
 import maya.cmds as cmds
 
-def DS_ConnectToNormalAlign(vertexMode = False):
+def DS_ConnectToNormalAlign():
 
     tempSel = cmds.ls(sl = True, l = True)
     if not len(tempSel) == 2:
@@ -12,6 +12,12 @@ def DS_ConnectToNormalAlign(vertexMode = False):
     sourceTransform = tempSel[0].split('.')[0]
     
     index = int(source.split('[')[-1].split(']')[0])
+    mode = source.split('.')[-1][0]
+
+    if not mode in ['v', 'f']:
+        cmds.error("Select a poly vertex or face.")
+        return False
+
     shapes = cmds.listRelatives(sourceTransform, s = True)
     if not shapes:
         return False
@@ -33,5 +39,6 @@ def DS_ConnectToNormalAlign(vertexMode = False):
     cmds.connectAttr(normalAlign +'.outputR', target +'.rotate')
     cmds.setAttr(normalAlign +'.index', index)
 
-    if vertexMode:
+    #if the selection is a vertex
+    if mode == 'v':
         cmds.setAttr(normalAlign +'.vertexMode', 1)
