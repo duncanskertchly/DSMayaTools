@@ -14,6 +14,8 @@ def DS_ConnectToNormalAlign():
     index = int(source.split('[')[-1].split(']')[0])
     mode = source.split('.')[-1][0]
 
+    print ("Mode = " +mode)
+
     if not mode in ['v', 'f']:
         cmds.error("Select a poly vertex or face.")
         return False
